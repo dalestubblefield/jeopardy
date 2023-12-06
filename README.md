@@ -3,7 +3,7 @@ A ServiceNow game based on the popular TV game show
 
 The Jeopardy app allows you to play the TV game show Jeopardy! on a ServiceNow instance. This is a fun and entertaining way to learn about the Now platform (or any of your favorite topics.) Sample data is available here. You can also build (and share) your own cards, categories, and boards using the optional exporter.
 
-Technical features include:
+## Technical features include:
 
 * Service Portal using record watcher for game play
 * Public pages and widgets
