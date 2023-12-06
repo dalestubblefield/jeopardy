@@ -5,10 +5,11 @@ The Jeopardy app allows you to play the TV game show Jeopardy! on a ServiceNow i
 
 Technical features include:
 
-Service Portal using record watcher for game play
-Public pages and widgets
-Image and audio support
-Scripted REST APIs
+* Service Portal using record watcher for game play
+* Public pages and widgets
+* Image and audio support
+* Scripted REST APIs
+
 Instructional video is available at: https://youtu.be/rzczuCVu-7Q
 
 Community post: https://community.servicenow.com/community?id=community_blog&sys_id=4c96f4b4db067380fff8a345ca96197a
