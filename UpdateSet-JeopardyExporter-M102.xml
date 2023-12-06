@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><unload unload_date="2019-06-03 14:29:06">
+<sys_remote_update_set action="INSERT_OR_UPDATE">
+<application display_value="Global">global</application>
+<application_name>Global</application_name>
+<application_scope>global</application_scope>
+<application_version/>
+<collisions/>
+<commit_date/>
+<deleted/>
+<description>Export a game, m2m records, and supporting cards and categories to XML and share with friends.</description>
+<inserted/>
+<name>Jeopardy Game Exporter v1.0.2</name>
+<origin_sys_id/>
+<parent display_value=""/>
+<release_date/>
+<remote_base_update_set display_value=""/>
+<remote_parent_id/>
+<remote_sys_id>4f477eb1dbf1bb00371478b5ae96195b</remote_sys_id>
+<state>loaded</state>
+<summary/>
+<sys_class_name>sys_remote_update_set</sys_class_name>
+<sys_created_by>chuck.tomasi</sys_created_by>
+<sys_created_on>2019-06-03 14:29:05</sys_created_on>
+<sys_id>80b7f6f1dbf1bb00371478b5ae961958</sys_id>
+<sys_mod_count>0</sys_mod_count>
+<sys_updated_by>chuck.tomasi</sys_updated_by>
+<sys_updated_on>2019-06-03 14:29:05</sys_updated_on>
+<update_set display_value=""/>
+<update_source display_value=""/>
+<updated/>
+</sys_remote_update_set>
+<sys_update_xml action="INSERT_OR_UPDATE">
+<action>INSERT_OR_UPDATE</action>
+<application display_value="Global">global</application>
+<category>customer</category>
+<comments/>
+<name>sys_processor_b884b59277103300086edada78106120</name>
+<payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;record_update table="sys_processor"&gt;&lt;sys_processor action="INSERT_OR_UPDATE"&gt;&lt;active&gt;true&lt;/active&gt;&lt;class_name/&gt;&lt;description/&gt;&lt;interactive&gt;false&lt;/interactive&gt;&lt;name&gt;ExportJeopardyGame&lt;/name&gt;&lt;parameters/&gt;&lt;params_endpoint/&gt;&lt;path&gt;export_jeopardy_game&lt;/path&gt;&lt;path_endpoint/&gt;&lt;require_csrf&gt;false&lt;/require_csrf&gt;&lt;roles&gt;snc_internal&lt;/roles&gt;&lt;script&gt;&lt;![CDATA[(function process(g_request, g_response, g_processor) {
+	var sysid = g_request.getParameter('sysparm_sys_id');
+	// gs.info('** Exporting Jeopardy Game ' + sysid);
+
+	//Name all the related lists
+	var exporter = new ExportWithRelatedLists('x_snc_jeopardy_game', sysid);
+	exporter.addRelatedList('x_snc_jeopardy_m2m_game_category', 'game');
+	exporter.addRelatedList('x_snc_jeopardy_m2m_game_card', 'game');
+
+	var m2mCatList = [];
+	var m2mCardList = [];
+	var catList = [];
+	var cardList = [];
+	var attList = [];
+
+	//Query for M2M categories
+	var m2mCat = new GlideRecord('x_snc_jeopardy_m2m_game_category');
+	m2mCat.addQuery('game', sysid);
+	m2mCat.query();
+	while (m2mCat.next()){
+		m2mCatList.push(m2mCat.getUniqueValue());
+
+		var catGr = new GlideRecord('x_snc_jeopardy_category');
+		catGr.addQuery('sys_id', m2mCat.getValue('category'));
+		catGr.query();
+		if (catGr.next()) {
+			catList.push(catGr.getUniqueValue());
+		}
+	}
+
+	// gs.info('** Exporting categories:\ ' + catList.join('\n'));
+
+	//Query for M2M cards
+	var m2mCard = new GlideRecord('x_snc_jeopardy_m2m_game_card');
+	m2mCard.addQuery('game', sysid);
+	m2mCard.query();
+	while (m2mCard.next()){
+		m2mCardList.push(m2mCard.getUniqueValue());
+
+		var cardGr = new GlideRecord('x_snc_jeopardy_card');
+		cardGr.addQuery('sys_id', m2mCard.getValue('card'));
+		cardGr.query();
+		if (cardGr.next()) {
+			cardList.push(cardGr.getUniqueValue());
+		}
+	}
+	
+	// Append Final Jeopardy card to cardList
+	var gameGr = new GlideRecord('x_snc_jeopardy_game');
+	if (gameGr.get(sysid)) {
+		cardList.push(gameGr.getValue('final_jeopardy'));
+	}
+	
+	var cardListText = cardList.join(',');
+	// gs.info('** Exporting cards:\n' + cardListText);
+	
+	var attGr = new GlideRecord('sys_attachment');
+	attGr.addQuery('table_name', 'x_snc_jeopardy_card');
+	attGr.addQuery('table_sys_id', 'IN', cardListText);
+	attGr.query();
+	// gs.info('** Attachment count=' + attGr.getRowCount());
+	// gs.info('** Attachment query=' + attGr.getEncodedQuery());
+	while (attGr.next()) {
+		attList.push(attGr.getValue('sys_id'));
+	}
+	
+	// gs.info('** Exporting attachments:\n ' + attList.join('\n'));
+
+	exporter.addQuerySet('x_snc_jeopardy_m2m_game_category', 'sys_idIN' + m2mCatList.join(','));
+	exporter.addQuerySet('x_snc_jeopardy_m2m_game_card', 'sys_idIN' + m2mCardList.join(','));
+	exporter.addQuerySet('x_snc_jeopardy_category', 'sys_idIN' + catList.join(','));
+	exporter.addQuerySet('x_snc_jeopardy_card', 'sys_idIN' + cardListText);
+	exporter.addQuerySet('sys_attachment', 'table_sys_idIN' + cardListText);
+	exporter.addQuerySet('sys_attachment_doc', 'sys_attachmentIN' + attList.join(','));
+	exporter.exportRecords(g_response);
+})(g_request, g_response, g_processor);]]&gt;&lt;/script&gt;&lt;sys_class_name&gt;sys_processor&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2019-03-22 09:22:00&lt;/sys_created_on&gt;&lt;sys_id&gt;b884b59277103300086edada78106120&lt;/sys_id&gt;&lt;sys_mod_count&gt;16&lt;/sys_mod_count&gt;&lt;sys_name&gt;ExportJeopardyGame&lt;/sys_name&gt;&lt;sys_package display_value="Global" source="global"&gt;global&lt;/sys_package&gt;&lt;sys_policy/&gt;&lt;sys_scope display_value="Global"&gt;global&lt;/sys_scope&gt;&lt;sys_update_name&gt;sys_processor_b884b59277103300086edada78106120&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;chuck.tomasi&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2019-06-03 14:28:48&lt;/sys_updated_on&gt;&lt;type&gt;script&lt;/type&gt;&lt;/sys_processor&gt;&lt;/record_update&gt;</payload>
+<payload_hash>-391009770</payload_hash>
+<remote_update_set display_value="Jeopardy Game Exporter v1.0.2">80b7f6f1dbf1bb00371478b5ae961958</remote_update_set>
+<replace_on_upgrade>false</replace_on_upgrade>
+<sys_created_by>chuck.tomasi</sys_created_by>
+<sys_created_on>2019-06-03 14:29:05</sys_created_on>
+<sys_id>c4b7f6f1dbf1bb00371478b5ae961958</sys_id>
+<sys_mod_count>0</sys_mod_count>
+<sys_recorded_at>16b1dbe21cc0000001</sys_recorded_at>
+<sys_updated_by>chuck.tomasi</sys_updated_by>
+<sys_updated_on>2019-06-03 14:29:05</sys_updated_on>
+<table/>
+<target_name>ExportJeopardyGame</target_name>
+<type>Processor</type>
+<update_domain>global</update_domain>
+<update_guid>7b9736f16af1bb00b9d992df657e21be</update_guid>
+<update_guid_history>7b9736f16af1bb00b9d992df657e21be:-391009770,f816327115f1bb0093bebe34be75f78c:1664996632,02ea4fa9d0797b00d9973d1fe64ba663:-207879810,cb9a4fa927797b00d69daba919ab3f5e:-1159402977,0c1d7a61e1797b0020d594e74accc6d9:30088541,a6ebb2612a797b0092fe83acfb9c6d0a:888642977,c1abfe21b7797b00cd9445b344d2c4f2:-1475711502,6d8bfe21e1797b002bc4ca2f57d543ec:871438725,303b7a214a797b00f71856b63ab69ebb:257364918,90ba3a2188797b00d10730148a925237:-71815623,666a7aed82397b0067a8ebb1b69f7765:887964927,69d872ede5397b00c518c1c9d52155ef:-1284160553,5ef0c6d6001033002ca9d008460672d6:-2034422159,ea7f71d68c10330047d373bbc83d46e0:-128703608,981fb9963f1033000392768e53f19524:-423948815,eef7b9d254103300cf6a3cf5b326d435:-1187254699,bd5575922c103300a0e3b1b7692a80b0:-1284386186</update_guid_history>
+<update_set display_value=""/>
+<view/>
+</sys_update_xml>
+</unload>
